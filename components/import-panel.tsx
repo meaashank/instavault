@@ -101,6 +101,7 @@ export function ImportPanel({ close }: { close: () => void }) {
               id: identity,
               caption,
               date: timestamp ? new Date(Number(timestamp) * 1000).toLocaleDateString() : "",
+              category: /stories/i.test(path) ? "story" : /reels/i.test(path) ? "reel" : /videos/i.test(path) ? "video" : "post",
               mediaType,
               mediaBlob,
             });
