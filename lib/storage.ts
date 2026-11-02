@@ -4,6 +4,7 @@ export type Post = {
   id: string;
   caption: string;
   date: string;
+  category?: "post" | "reel" | "story" | "video";
   mediaType?: string;
   mediaBlob?: Blob;
   mediaUrl?: string;
