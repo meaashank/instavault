@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import JSZip from "jszip";
 import { X, Upload, ShieldCheck, LoaderCircle, CheckCircle2, AlertCircle } from "lucide-react";
 import { useArchive } from "./archive-provider";
-import type { Archive, Post } from "@/lib/storage";
+import type { Archive, Post, Conversation } from "@/lib/storage";
 
 const isMedia = (name: string) => /\.(jpe?g|png|webp|gif|mp4|mov|m4v)$/i.test(name);
 const mimeFor = (name: string) => {
@@ -107,6 +107,39 @@ export function ImportPanel({ close }: { close: () => void }) {
           }
         }
       }
+
+      const conversations: Conversation[] = parsed
+        .filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path))
+        .map(({ path, value }) => {
+          const messages = Array.isArray(value?.messages) ? value.messages : [];
+          const participants = Array.isArray(value?.participants)
+            ? value.participants.map((person: any) => person?.name).filter(Boolean)
+            : [];
+          const threadName = path.split("/").filter(Boolean).slice(-2, -1)[0]
+            ?.replace(/_/g, " ") || "Conversation";
+          return {
+            id: path,
+            title: textValue(value?.title) || threadName,
+            participants,
+            messages: messages.map((message: any) => {
+              const timestamp = Number(message?.timestamp_ms || 0);
+              const attachments = [
+                ...(Array.isArray(message?.photos) ? message.photos : []),
+                ...(Array.isArray(message?.videos) ? message.videos : []),
+                ...(Array.isArray(message?.audio_files) ? message.audio_files : []),
+              ].length;
+              const content = textValue(message?.content) ||
+                (attachments ? `[${attachments} attachment${attachments === 1 ? "" : "s"}]` : "");
+              return {
+                sender: textValue(message?.sender_name) || "Unknown",
+                content,
+                timestamp,
+                date: timestamp ? new Date(timestamp).toLocaleString() : "",
+              };
+            }).filter((message: any) => message.content || message.date)
+              .sort((a: any, b: any) => a.timestamp - b.timestamp),
+          };
+        }).filter((conversation) => conversation.messages.length > 0);
 
       const username = parsed.map(({ value }) =>
         value?.profile_user?.username || value?.profile?.username || value?.username
