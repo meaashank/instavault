@@ -14,6 +14,7 @@ export type Conversation = { id: string; title: string; participants: string[]; 
 export type Archive = {
   username: string;
   posts: Post[];
+  savedPosts?: Post[];
   conversations: Conversation[];
   messageFiles: number;
   followerFiles: number;
