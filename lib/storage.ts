@@ -8,9 +8,12 @@ export type Post = {
   mediaBlob?: Blob;
   mediaUrl?: string;
 };
+export type ArchivedMessage = { sender: string; content: string; date: string; timestamp: number };
+export type Conversation = { id: string; title: string; participants: string[]; messages: ArchivedMessage[] };
 export type Archive = {
   username: string;
   posts: Post[];
+  conversations: Conversation[];
   messageFiles: number;
   followerFiles: number;
   followingFiles: number;
