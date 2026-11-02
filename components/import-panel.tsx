@@ -1,3 +1,154 @@
 "use client";
-import {useRef,useState} from "react";import JSZip from "jszip";import {X,Upload,ShieldCheck,LoaderCircle,CheckCircle2,AlertCircle} from "lucide-react";import {useArchive} from "./archive-provider";import type {Archive,Post} from "@/lib/storage";
-export function ImportPanel({close}:{close:()=>void}){const ref=useRef<HTMLInputElement>(null);const {setArchive}=useArchive();const [busy,setBusy]=useState(false),[status,setStatus]=useState(""),[error,setError]=useState("");async function run(file?:File){if(!file)return;setBusy(true);setError("");try{const zip=await JSZip.loadAsync(file);const entries=Object.values(zip.files).filter(f=>!f.dir);const jsonFiles=entries.filter(f=>f.name.toLowerCase().endsWith(".json"));const data:Record<string,any>={};for(let n=0;n<jsonFiles.length;n++){setStatus("Reading JSON "+(n+1)+" / "+jsonFiles.length);try{const f=jsonFiles[n];data[f.name]=JSON.parse(await f.async("string"));}catch{}}const media=entries.filter(f=>/\.(jpe?g|png|webp|mp4|mov)$/i.test(f.name));const urls=new Map<string,string>();for(const f of media){if(/\.(jpe?g|png|webp)$/i.test(f.name))urls.set(f.name,"data:image/"+(f.name.split(".").pop()||"jpeg").replace("jpg","jpeg")+";base64,"+await f.async("base64"));}const posts:Post[]=[];for(const [path,value] of Object.entries(data)){if(/posts|reels/i.test(path)){const rows=Array.isArray(value)?value:(value?.posts||value?.photos||[]);for(const row of rows){const item=row?.media?.[0]||row;const uri=item?.uri||item?.path;const match=uri?([...urls.entries()].find(([k])=>k.endsWith(String(uri).split("/").pop()||""))?.[1]):undefined;const caption=(row?.caption?.[0]?.value||row?.title||row?.caption||item?.title||"").toString();const ts=row?.creation_timestamp||row?.timestamp||item?.creation_timestamp;posts.push({id:path+"-"+posts.length,caption,date:ts?new Date(Number(ts)*1000).toLocaleDateString():"",mediaUrl:match});}}}const username=Object.values(data).map((v:any)=>v?.profile_user?.username||v?.username).find(Boolean)||"";const archive:Archive={username,posts,messageFiles:Object.keys(data).filter(k=>/messages\/inbox/i.test(k)).length,followerFiles:Object.keys(data).filter(k=>/followers/i.test(k)&&/followers(_\d+)?\.json/i.test(k)).length,followingFiles:Object.keys(data).filter(k=>/following/i.test(k)).length,mediaCount:media.length,fileCount:entries.length,importedAt:new Date().toISOString()};setArchive(archive);setStatus("Imported "+posts.length+" posts and "+media.length+" media files.");}catch(e){setError(e instanceof Error?e.message:"Could not read ZIP. Try exporting Instagram data in JSON format.");}finally{setBusy(false)}}return <div className="shade" onClick={close}><section className="import-card" onClick={e=>e.stopPropagation()}><button className="x" onClick={close}><X/></button><div className="eyebrow">YOUR DATA, YOUR SPACE</div><h2>Import your Instagram</h2><p>Choose the ZIP file from Instagram. Everything is processed in this browser; your archive is not uploaded.</p><button className="drop" disabled={busy} onClick={()=>ref.current?.click()}><Upload size={25}/><b>{busy?"Importing…":"Choose Instagram ZIP"}</b><small>JSON export recommended</small></button><input ref={ref} hidden type="file" accept=".zip" onChange={e=>run(e.target.files?.[0])}/><div className="privacy"><ShieldCheck/> <span><b>Private by design</b><small>Stored in this browser on this device.</small></span></div>{busy&&<p className="status"><LoaderCircle className="spin"/>{status}</p>}{status&&!busy&&<p className="status"><CheckCircle2/>{status}</p>}{error&&<p className="error"><AlertCircle/>{error}</p>}<small className="hint">Large exports may take a few minutes. Keep this tab open.</small></section></div>}
+
+import { useRef, useState } from "react";
+import JSZip from "jszip";
+import { X, Upload, ShieldCheck, LoaderCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { useArchive } from "./archive-provider";
+import type { Archive, Post } from "@/lib/storage";
+
+const isMedia = (name: string) => /\.(jpe?g|png|webp|gif|mp4|mov|m4v)$/i.test(name);
+const mimeFor = (name: string) => {
+  const ext = name.split(".").pop()?.toLowerCase();
+  return ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+    : ext === "png" ? "image/png" : ext === "webp" ? "image/webp"
+    : ext === "gif" ? "image/gif" : ext === "mov" ? "video/quicktime"
+    : ext === "m4v" ? "video/x-m4v" : "video/mp4";
+};
+const basename = (value: string) => value.replace(/\\/g, "/").split("/").pop()?.toLowerCase() || "";
+
+function textValue(value: any): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(textValue).filter(Boolean).join("");
+  if (value && typeof value === "object") {
+    if (typeof value.value === "string") return value.value;
+    if (typeof value.title === "string") return value.title;
+  }
+  return "";
+}
+
+function rowsFrom(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  for (const key of ["posts", "reels", "photos", "videos", "ig_reels_media", "media"]) {
+    if (Array.isArray(value?.[key])) return value[key];
+  }
+  return [];
+}
+
+export function ImportPanel({ close }: { close: () => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const { setArchive } = useArchive();
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+
+  async function run(file?: File) {
+    if (!file) return;
+    setBusy(true);
+    setError("");
+    setStatus("Opening archive…");
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+      const jsonFiles = entries.filter((entry) => entry.name.toLowerCase().endsWith(".json"));
+      const mediaFiles = entries.filter((entry) => isMedia(entry.name));
+      const parsed: Array<{ path: string; value: any }> = [];
+
+      for (let index = 0; index < jsonFiles.length; index++) {
+        setStatus(`Reading JSON ${index + 1} of ${jsonFiles.length}…`);
+        try {
+          parsed.push({ path: jsonFiles[index].name, value: JSON.parse(await jsonFiles[index].async("string")) });
+        } catch {
+          // Ignore malformed or non-JSON files without aborting the whole import.
+        }
+      }
+
+      const mediaByName = new Map<string, typeof mediaFiles>();
+      for (const entry of mediaFiles) {
+        const key = basename(entry.name);
+        mediaByName.set(key, [...(mediaByName.get(key) || []), entry]);
+      }
+
+      const posts: Post[] = [];
+      const seen = new Set<string>();
+      for (const { path, value } of parsed) {
+        if (!/(^|\/)(posts|reels|videos|archived_posts|stories)(_|\/|\.)/i.test(path) &&
+            !/(posts|reels|videos|archived_posts|stories)/i.test(path)) continue;
+
+        for (const row of rowsFrom(value)) {
+          const items = Array.isArray(row?.media) ? row.media : [row];
+          for (const item of items) {
+            const uri = item?.uri || item?.path || item?.media?.uri || "";
+            const mediaEntry = uri ? mediaByName.get(basename(String(uri)))?.[0] : undefined;
+            const caption = textValue(row?.caption) || textValue(row?.title) ||
+              textValue(item?.title) || textValue(item?.caption) || "";
+            const timestamp = row?.creation_timestamp || row?.timestamp ||
+              item?.creation_timestamp || item?.timestamp;
+            if (!caption && !mediaEntry) continue;
+
+            const identity = String(uri || `${path}:${timestamp || posts.length}:${caption}`);
+            if (seen.has(identity)) continue;
+            seen.add(identity);
+
+            let mediaBlob: Blob | undefined;
+            let mediaType: string | undefined;
+            if (mediaEntry) {
+              mediaType = mimeFor(mediaEntry.name);
+              mediaBlob = await mediaEntry.async("blob").then((blob) =>
+                new Blob([blob], { type: mediaType })
+              );
+            }
+            posts.push({
+              id: identity,
+              caption,
+              date: timestamp ? new Date(Number(timestamp) * 1000).toLocaleDateString() : "",
+              mediaType,
+              mediaBlob,
+            });
+          }
+        }
+      }
+
+      const username = parsed.map(({ value }) =>
+        value?.profile_user?.username || value?.profile?.username || value?.username
+      ).find(Boolean) || "";
+      const archive: Archive = {
+        username,
+        posts,
+        messageFiles: parsed.filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path)).length,
+        followerFiles: parsed.filter(({ path }) => /followers(_\d+)?\.json$/i.test(path)).length,
+        followingFiles: parsed.filter(({ path }) => /following(_\d+)?\.json$/i.test(path)).length,
+        mediaCount: mediaFiles.length,
+        fileCount: entries.length,
+        importedAt: new Date().toISOString(),
+      };
+
+      setStatus("Saving your archive locally…");
+      setArchive(archive);
+      setStatus(`Imported ${posts.length} posts and ${mediaFiles.length} media files.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not read this ZIP. Try downloading your Instagram export in JSON format.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="shade" onClick={close}>
+      <section className="import-card" onClick={(event) => event.stopPropagation()}>
+        <button className="x" onClick={close} aria-label="Close"><X /></button>
+        <div className="eyebrow">YOUR DATA, YOUR SPACE</div>
+        <h2>Import your Instagram</h2>
+        <p>Choose the ZIP file from Instagram. Processing happens in this browser; your archive is not uploaded.</p>
+        <button className="drop" disabled={busy} onClick={() => ref.current?.click()}>
+          <Upload size={25} /><b>{busy ? "Importing…" : "Choose Instagram ZIP"}</b><small>JSON export recommended</small>
+        </button>
+        <input ref={ref} hidden type="file" accept=".zip,application/zip" onChange={(event) => run(event.target.files?.[0])} />
+        <div className="privacy"><ShieldCheck /><span><b>Private by design</b><small>Stored in this browser on this device.</small></span></div>
+        {busy && <p className="status"><LoaderCircle className="spin" />{status}</p>}
+        {!busy && status && <p className="status"><CheckCircle2 />{status}</p>}
+        {error && <p className="error"><AlertCircle />{error}</p>}
+        <small className="hint">Large exports may take a few minutes. Keep this tab open.</small>
+      </section>
+    </div>
+  );
+}
