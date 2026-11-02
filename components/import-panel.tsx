@@ -147,6 +147,7 @@ export function ImportPanel({ close }: { close: () => void }) {
       const archive: Archive = {
         username,
         posts,
+        conversations,
         messageFiles: parsed.filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path)).length,
         followerFiles: parsed.filter(({ path }) => /followers(_\d+)?\.json$/i.test(path)).length,
         followingFiles: parsed.filter(({ path }) => /following(_\d+)?\.json$/i.test(path)).length,
