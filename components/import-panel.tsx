@@ -28,7 +28,7 @@ function textValue(value: any): string {
 
 function rowsFrom(value: any): any[] {
   if (Array.isArray(value)) return value;
-  for (const key of ["posts", "reels", "photos", "videos", "ig_reels_media", "media"]) {
+  for (const key of ["posts", "reels", "photos", "videos", "ig_reels_media", "media", "saved_saved_media", "saved_media", "saved_posts"]) {
     if (Array.isArray(value?.[key])) return value[key];
   }
   return [];
