@@ -18,18 +18,25 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setArchive = (next: Archive) => {
+    const withUrls = (items: Archive["posts"]) => items.map((post) => ({
+      ...post,
+      mediaUrl: post.mediaBlob ? URL.createObjectURL(post.mediaBlob) : undefined,
+    }));
     const presented: Archive = {
       ...next,
-      posts: next.posts.map((post) => ({
-        ...post,
-        mediaUrl: post.mediaBlob ? URL.createObjectURL(post.mediaBlob) : undefined,
-      })),
+      posts: withUrls(next.posts || []),
+      savedPosts: withUrls(next.savedPosts || []),
     };
     set(presented);
     void saveArchive(presented);
   };
 
-  const clearArchive = () => {\n    set(null);\n    void saveArchive(null);\n  };\n\n  return <Context.Provider value={{ archive, setArchive, clearArchive }}>{children}</Context.Provider>;
+  const clearArchive = () => {
+    set(null);
+    void saveArchive(null);
+  };
+
+  return <Context.Provider value={{ archive, setArchive, clearArchive }}>{children}</Context.Provider>;
 }
 
 export const useArchive = () => useContext(Context);
