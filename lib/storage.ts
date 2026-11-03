@@ -43,6 +43,7 @@ export async function saveArchive(archive: Archive | null) {
   const durable: Archive = {
     ...archive,
     posts: archive.posts.map(({ mediaUrl: _mediaUrl, ...post }) => post),
+    savedPosts: (archive.savedPosts || []).map(({ mediaUrl: _mediaUrl, ...post }) => post),
   };
   await db.put("archive", durable, "current");
 }
@@ -54,6 +55,10 @@ export async function getArchive(): Promise<Archive | null> {
   return {
     ...archive,
     posts: archive.posts.map((post) => ({
+      ...post,
+      mediaUrl: post.mediaBlob ? URL.createObjectURL(post.mediaBlob) : undefined,
+    })),
+    savedPosts: (archive.savedPosts || []).map((post) => ({
       ...post,
       mediaUrl: post.mediaBlob ? URL.createObjectURL(post.mediaBlob) : undefined,
     })),
