@@ -109,6 +109,34 @@ export function ImportPanel({ close }: { close: () => void }) {
         }
       }
 
+      const savedPosts: Post[] = [];
+      const savedSeen = new Set<string>();
+      for (const { path, value } of parsed) {
+        if (!/saved/i.test(path)) continue;
+        for (const row of rowsFrom(value)) {
+          const items = Array.isArray(row?.media) ? row.media : [row];
+          for (const item of items) {
+            const uri = item?.uri || item?.path || item?.media?.uri || "";
+            const mediaEntry = uri ? mediaByName.get(basename(String(uri)))?.[0] : undefined;
+            const linkData = Array.isArray(row?.string_list_data) ? row.string_list_data[0] : undefined;
+            const savedUrl = textValue(linkData?.href) || textValue(row?.href) || textValue(item?.href);
+            const caption = textValue(row?.title) || textValue(row?.caption) || textValue(item?.title) || "Saved Instagram post";
+            const timestamp = linkData?.timestamp || row?.timestamp || item?.timestamp;
+            const identity = String(uri || savedUrl || `saved:${path}:${timestamp || savedPosts.length}`);
+            if (savedSeen.has(identity)) continue;
+            savedSeen.add(identity);
+            let mediaBlob: Blob | undefined;
+            let mediaType: string | undefined;
+            if (mediaEntry) {
+              mediaType = mimeFor(mediaEntry.name);
+              const blob = await mediaEntry.async("blob");
+              mediaBlob = new Blob([blob], { type: mediaType });
+            }
+            savedPosts.push({ id: identity, caption, date: timestamp ? new Date(Number(timestamp) * 1000).toLocaleDateString() : "", category: "post", mediaType, mediaBlob, savedUrl: savedUrl || undefined });
+          }
+        }
+      }
+
       const conversations: Conversation[] = parsed
         .filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path))
         .map(({ path, value }) => {
@@ -148,6 +176,7 @@ export function ImportPanel({ close }: { close: () => void }) {
       const archive: Archive = {
         username,
         posts,
+        savedPosts,
         conversations,
         messageFiles: parsed.filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path)).length,
         followerFiles: parsed.filter(({ path }) => /followers(_\d+)?\.json$/i.test(path)).length,
