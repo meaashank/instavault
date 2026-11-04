@@ -10,7 +10,8 @@ export type Post = {
   mediaUrl?: string;
   savedUrl?: string;
 };
-export type ArchivedMessage = { sender: string; content: string; date: string; timestamp: number };
+export type MessageAttachment = { mediaType: string; mediaBlob?: Blob; mediaUrl?: string; name?: string };
+export type ArchivedMessage = { sender: string; content: string; date: string; timestamp: number; attachments?: MessageAttachment[] };
 export type Conversation = { id: string; title: string; participants: string[]; messages: ArchivedMessage[] };
 export type Archive = {
   username: string;
@@ -45,6 +46,7 @@ export async function saveArchive(archive: Archive | null) {
     ...archive,
     posts: archive.posts.map(({ mediaUrl: _mediaUrl, ...post }) => post),
     savedPosts: (archive.savedPosts || []).map(({ mediaUrl: _mediaUrl, ...post }) => post),
+    conversations: archive.conversations.map((conversation) => ({ ...conversation, messages: conversation.messages.map((message) => ({ ...message, attachments: message.attachments?.map(({ mediaUrl: _mediaUrl, ...attachment }) => attachment) })) })),
   };
   await db.put("archive", durable, "current");
 }
@@ -63,5 +65,6 @@ export async function getArchive(): Promise<Archive | null> {
       ...post,
       mediaUrl: post.mediaBlob ? URL.createObjectURL(post.mediaBlob) : undefined,
     })),
+    conversations: archive.conversations.map((conversation) => ({ ...conversation, messages: conversation.messages.map((message) => ({ ...message, attachments: message.attachments?.map((attachment) => ({ ...attachment, mediaUrl: attachment.mediaBlob ? URL.createObjectURL(attachment.mediaBlob) : undefined })) })) })),
   };
 }
