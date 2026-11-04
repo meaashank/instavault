@@ -14,7 +14,8 @@ const mimeFor = (name: string) => {
     : ext === "gif" ? "image/gif" : ext === "mov" ? "video/quicktime"
     : ext === "m4v" ? "video/x-m4v" : "video/mp4";
 };
-const basename = (value: string) => value.replace(/\\/g, "/").split("/").pop()?.toLowerCase() || "";
+const normalizePath = (value: string) => value.replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
+const basename = (value: string) => normalizePath(value).split("/").pop() || "";
 
 function textValue(value: any): string {
   if (typeof value === "string") return value;
@@ -62,11 +63,22 @@ export function ImportPanel({ close }: { close: () => void }) {
         }
       }
 
+      const mediaByPath = new Map(mediaFiles.map((entry) => [normalizePath(entry.name), entry]));
       const mediaByName = new Map<string, typeof mediaFiles>();
       for (const entry of mediaFiles) {
         const key = basename(entry.name);
         mediaByName.set(key, [...(mediaByName.get(key) || []), entry]);
       }
+      const findMedia = (uri: string, threadPath = "") => {
+        const normalized = normalizePath(uri);
+        const exact = mediaByPath.get(normalized) || mediaByPath.get(normalizePath("your_instagram_activity/" + normalized));
+        if (exact) return exact;
+        const threadDir = threadPath.slice(0, threadPath.lastIndexOf("/"));
+        const relative = threadDir ? mediaByPath.get(normalizePath(threadDir + "/" + normalized)) : undefined;
+        if (relative) return relative;
+        const matches = mediaByName.get(basename(uri)) || [];
+        return matches.find((entry) => threadDir && entry.name.startsWith(threadDir + "/")) || matches[0];
+      };
 
       const posts: Post[] = [];
       const seen = new Set<string>();
@@ -78,7 +90,7 @@ export function ImportPanel({ close }: { close: () => void }) {
           const items = Array.isArray(row?.media) ? row.media : [row];
           for (const item of items) {
             const uri = item?.uri || item?.path || item?.media?.uri || "";
-            const mediaEntry = uri ? mediaByName.get(basename(String(uri)))?.[0] : undefined;
+            const mediaEntry = uri ? findMedia(String(uri)) : undefined;
             const caption = textValue(row?.caption) || textValue(row?.title) ||
               textValue(item?.title) || textValue(item?.caption) || "";
             const timestamp = row?.creation_timestamp || row?.timestamp ||
@@ -137,38 +149,44 @@ export function ImportPanel({ close }: { close: () => void }) {
         }
       }
 
-      const conversations: Conversation[] = parsed
+      const conversationPromises = parsed
         .filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path))
-        .map(({ path, value }) => {
+        .map(async ({ path, value }) => {
           const messages = Array.isArray(value?.messages) ? value.messages : [];
           const participants = Array.isArray(value?.participants)
             ? value.participants.map((person: any) => person?.name).filter(Boolean)
             : [];
-          const threadName = path.split("/").filter(Boolean).slice(-2, -1)[0]
-            ?.replace(/_/g, " ") || "Conversation";
+          const threadName = path.split("/").filter(Boolean).slice(-2, -1)[0]?.replace(/_/g, " ") || "Conversation";
+          const resolvedMessages = await Promise.all(messages.map(async (message: any) => {
+            const timestamp = Number(message?.timestamp_ms || 0);
+            const rawAttachments = [
+              ...(Array.isArray(message?.photos) ? message.photos.map((item: any) => ({ ...item, kind: "image" })) : []),
+              ...(Array.isArray(message?.videos) ? message.videos.map((item: any) => ({ ...item, kind: "video" })) : []),
+              ...(Array.isArray(message?.audio_files) ? message.audio_files.map((item: any) => ({ ...item, kind: "audio" })) : []),
+            ];
+            const attachments = await Promise.all(rawAttachments.map(async (item: any) => {
+              const entry = item?.uri ? findMedia(String(item.uri), path) : undefined;
+              if (!entry) return undefined;
+              const mediaType = mimeFor(entry.name);
+              const blob = await entry.async("blob");
+              return { mediaType, mediaBlob: new Blob([blob], { type: mediaType }), name: basename(entry.name) };
+            }));
+            return {
+              sender: textValue(message?.sender_name) || "Unknown",
+              content: textValue(message?.content),
+              timestamp,
+              date: timestamp ? new Date(timestamp).toLocaleString() : "",
+              attachments: attachments.filter(Boolean),
+            };
+          }));
           return {
             id: path,
             title: textValue(value?.title) || threadName,
             participants,
-            messages: messages.map((message: any) => {
-              const timestamp = Number(message?.timestamp_ms || 0);
-              const attachments = [
-                ...(Array.isArray(message?.photos) ? message.photos : []),
-                ...(Array.isArray(message?.videos) ? message.videos : []),
-                ...(Array.isArray(message?.audio_files) ? message.audio_files : []),
-              ].length;
-              const content = textValue(message?.content) ||
-                (attachments ? `[${attachments} attachment${attachments === 1 ? "" : "s"}]` : "");
-              return {
-                sender: textValue(message?.sender_name) || "Unknown",
-                content,
-                timestamp,
-                date: timestamp ? new Date(timestamp).toLocaleString() : "",
-              };
-            }).filter((message: any) => message.content || message.date)
-              .sort((a: any, b: any) => a.timestamp - b.timestamp),
+            messages: resolvedMessages.filter((message: any) => message.content || message.attachments?.length || message.date).sort((a: any, b: any) => a.timestamp - b.timestamp),
           };
-        }).filter((conversation) => conversation.messages.length > 0);
+        });
+      const conversations: Conversation[] = (await Promise.all(conversationPromises)).filter((conversation) => conversation.messages.length > 0);
 
       const username = parsed.map(({ value }) =>
         value?.profile_user?.username || value?.profile?.username || value?.username
