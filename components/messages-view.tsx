@@ -38,7 +38,7 @@ export function MessagesView({ conversations, username }: { conversations: Conve
           <div className="message-history">
             {current.messages.map((message, index) => {
               const own = message.sender.toLowerCase() === username.toLowerCase() && Boolean(username);
-              return <div className={`message-line ${own ? "own" : ""}`} key={index}><div className="message-bubble"><small>{message.sender}</small><p>{message.content}</p>{message.date && <time>{message.date}</time>}</div></div>;
+              return <div className={`message-line ${own ? "own" : ""}`} key={index}><div className="message-bubble"><small>{message.sender}</small>{message.content && <p>{message.content}</p>}{message.attachments?.map((attachment, attachmentIndex) => <div className="message-attachment" key={attachmentIndex}>{attachment.mediaUrl && (attachment.mediaType.startsWith("video/") ? <video src={attachment.mediaUrl} controls playsInline /> : attachment.mediaType.startsWith("image/") ? <img src={attachment.mediaUrl} alt="Shared in conversation" loading="lazy" /> : <a href={attachment.mediaUrl} download={attachment.name || "attachment"}>Download attachment</a>)}</div>)}{message.date && <time>{message.date}</time>}</div></div>;
             })}
           </div>
           <div className="thread-footnote">Read-only archive · Messages are stored on this device</div>
