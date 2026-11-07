@@ -205,3 +205,5 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 @media(max-width:760px){.mobile-logo{font-size:24px!important}.feed{max-width:none!important}.feed-media{min-height:230px!important}.profile-top{gap:25px!important}}
 
 .message-attachment audio{display:block;width:100%;max-width:300px;margin-top:6px}
+
+.profile-tabs button{height:100%;display:flex;align-items:center;gap:6px;border:0;border-top:1px solid transparent;background:transparent;color:var(--muted);font:600 10px inherit;letter-spacing:1px;padding:0 4px;cursor:pointer}.profile-tabs button.active{border-top-color:var(--text);color:var(--text)}
