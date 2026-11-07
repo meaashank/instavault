@@ -203,3 +203,5 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .story>span{border-color:#d62976!important}
 .instagram-modal{background:var(--panel)!important}
 @media(max-width:760px){.mobile-logo{font-size:24px!important}.feed{max-width:none!important}.feed-media{min-height:230px!important}.profile-top{gap:25px!important}}
+
+.message-attachment audio{display:block;width:100%;max-width:300px;margin-top:6px}
