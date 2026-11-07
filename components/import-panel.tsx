@@ -6,13 +6,13 @@ import { X, Upload, ShieldCheck, LoaderCircle, CheckCircle2, AlertCircle } from 
 import { useArchive } from "./archive-provider";
 import type { Archive, Post, Conversation } from "@/lib/storage";
 
-const isMedia = (name: string) => /\.(jpe?g|png|webp|gif|mp4|mov|m4v)$/i.test(name);
+const isMedia = (name: string) => /\.(jpe?g|png|webp|gif|mp4|mov|m4v|mp3|m4a|wav|ogg|aac)$/i.test(name);
 const mimeFor = (name: string) => {
   const ext = name.split(".").pop()?.toLowerCase();
   return ext === "jpg" || ext === "jpeg" ? "image/jpeg"
     : ext === "png" ? "image/png" : ext === "webp" ? "image/webp"
     : ext === "gif" ? "image/gif" : ext === "mov" ? "video/quicktime"
-    : ext === "m4v" ? "video/x-m4v" : "video/mp4";
+    : ext === "m4v" ? "video/x-m4v" : ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : ext === "wav" ? "audio/wav" : ext === "ogg" ? "audio/ogg" : ext === "aac" ? "audio/aac" : "video/mp4";
 };
 const normalizePath = (value: string) => value.replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
 const basename = (value: string) => normalizePath(value).split("/").pop() || "";
@@ -196,6 +196,12 @@ export function ImportPanel({ close }: { close: () => void }) {
         .flatMap(({ value }) => Array.isArray(value) ? value : [])
         .find((item: any) => /user(name)?/i.test(String(item?.label || "")));
       const username = String(directUsername || textValue(profileUsername?.value) || "");
+      const followerCount = parsed
+        .filter(({ path }) => /followers(_\\d+)?\\.json$/i.test(path))
+        .reduce((total, item) => total + rowsFrom(item.value).length, 0);
+      const followingCount = parsed
+        .filter(({ path }) => /following(_\\d+)?\\.json$/i.test(path))
+        .reduce((total, item) => total + rowsFrom(item.value).length, 0);
       const archive: Archive = {
         username,
         posts,
@@ -204,6 +210,8 @@ export function ImportPanel({ close }: { close: () => void }) {
         messageFiles: parsed.filter(({ path }) => /messages\/inbox\/.*\.json$/i.test(path)).length,
         followerFiles: parsed.filter(({ path }) => /followers(_\d+)?\.json$/i.test(path)).length,
         followingFiles: parsed.filter(({ path }) => /following(_\d+)?\.json$/i.test(path)).length,
+        followerCount,
+        followingCount,
         mediaCount: mediaFiles.length,
         fileCount: entries.length,
         importedAt: new Date().toISOString(),
