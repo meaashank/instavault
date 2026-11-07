@@ -21,6 +21,8 @@ export type Archive = {
   messageFiles: number;
   followerFiles: number;
   followingFiles: number;
+  followerCount?: number;
+  followingCount?: number;
   mediaCount: number;
   fileCount: number;
   importedAt: string;
