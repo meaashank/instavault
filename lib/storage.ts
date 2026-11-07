@@ -11,7 +11,7 @@ export type Post = {
   savedUrl?: string;
 };
 export type MessageAttachment = { mediaType: string; mediaBlob?: Blob; mediaUrl?: string; name?: string };
-export type ArchivedMessage = { sender: string; content: string; date: string; timestamp: number; attachments?: MessageAttachment[] };
+export type ArchivedMessage = { sender: string; content: string; date: string; timestamp: number; attachments?: MessageAttachment[]; shareUrl?: string; shareTitle?: string; reactions?: { actor: string; reaction: string }[] };
 export type Conversation = { id: string; title: string; participants: string[]; messages: ArchivedMessage[] };
 export type Archive = {
   username: string;
