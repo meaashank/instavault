@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import { X, Upload, ShieldCheck, LoaderCircle, CheckCircle2, AlertCircle } from "lucide-react";
 import { useArchive } from "./archive-provider";
@@ -53,15 +53,35 @@ export function ImportPanel({ close }: { close: () => void }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    if (busy) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [busy, close]);
 
   async function run(file?: File) {
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      setError("Choose the ZIP file you downloaded from Instagram.");
+      setStatus("");
+      return;
+    }
     setBusy(true);
     setError("");
     setStatus("Opening archive…");
     try {
       const zip = await JSZip.loadAsync(file);
       const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+      if (!entries.length) {
+        setError("This ZIP archive is empty. Choose the Instagram export ZIP and try again.");
+        setStatus("");
+        return;
+      }
       const jsonFiles = entries.filter((entry) => entry.name.toLowerCase().endsWith(".json"));
       const mediaFiles = entries.filter((entry) => isMedia(entry.name));
       const parsed: Array<{ path: string; value: any }> = [];
@@ -246,20 +266,46 @@ export function ImportPanel({ close }: { close: () => void }) {
   }
 
   return (
-    <div className="shade" onClick={close}>
-      <section className="import-card" onClick={(event) => event.stopPropagation()}>
-        <button className="x" onClick={close} aria-label="Close"><X /></button>
+    <div className="shade" onClick={(event) => { if (!busy && event.target === event.currentTarget) close(); }}>
+      <section className="import-card" role="dialog" aria-modal="true" aria-labelledby="import-title" onClick={(event) => event.stopPropagation()}>
+        <button className="x" type="button" onClick={close} aria-label="Close import dialog" disabled={busy}><X /></button>
         <div className="eyebrow">YOUR DATA, YOUR SPACE</div>
-        <h2>Import your Instagram</h2>
+        <h2 id="import-title">Import your Instagram</h2>
         <p>Choose the ZIP file from Instagram. Processing happens in this browser; your archive is not uploaded.</p>
-        <button className="drop" disabled={busy} onClick={() => ref.current?.click()}>
-          <Upload size={25} /><b>{busy ? "Importing…" : "Choose Instagram ZIP"}</b><small>JSON export recommended</small>
+        <button
+          className={dragging ? "drop dragging" : "drop"}
+          type="button"
+          disabled={busy}
+          onClick={() => ref.current?.click()}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            void run(event.dataTransfer.files?.[0]);
+          }}
+        >
+          <Upload size={25} aria-hidden="true" />
+          <b>{busy ? "Importing…" : dragging ? "Drop your ZIP to import" : "Choose or drop Instagram ZIP"}</b>
+          <small>JSON export recommended</small>
         </button>
-        <input ref={ref} hidden type="file" accept=".zip,application/zip" onChange={(event) => run(event.target.files?.[0])} />
-        <div className="privacy"><ShieldCheck /><span><b>Private by design</b><small>Stored in this browser on this device.</small></span></div>
-        {busy && <p className="status"><LoaderCircle className="spin" />{status}</p>}
-        {!busy && status && <p className="status"><CheckCircle2 />{status}</p>}
-        {error && <p className="error"><AlertCircle />{error}</p>}
+        <input
+          ref={ref}
+          hidden
+          type="file"
+          accept=".zip,application/zip,application/x-zip-compressed"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.currentTarget.value = "";
+            void run(file);
+          }}
+        />
+        <div className="privacy"><ShieldCheck aria-hidden="true" /><span><b>Private by design</b><small>Stored in this browser on this device.</small></span></div>
+        {busy && <p className="status" role="status" aria-live="polite"><LoaderCircle className="spin" />{status}</p>}
+        {!busy && status && <p className="status" role="status"><CheckCircle2 />{status}</p>}
+        {error && <p className="error" role="alert"><AlertCircle />{error}</p>}
         <small className="hint">Large exports may take a few minutes. Keep this tab open.</small>
       </section>
     </div>

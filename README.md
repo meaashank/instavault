@@ -1,24 +1,24 @@
 # InstaVault
 
-A local-first Instagram archive viewer. Import an Instagram data-export ZIP and browse the extracted content in a responsive, familiar interface.
+InstaVault is a local-first viewer for your downloaded Instagram archive. Import an export ZIP and explore the content included in it in a responsive, private workspace.
 
 ## Features
 
-- Import an Instagram ZIP containing JSON and media files.
-- Browse detected posts, captions, dates, images, and supported videos.
-- Open a read-only Messages view with conversation lists and message history.
-- Search post captions and dates, and search conversation names/participants.
-- Keep media as browser-local Blobs in IndexedDB instead of expanding them into base64 strings.
-- Responsive layout with desktop navigation and a mobile conversation view.
+- Import an Instagram data-export ZIP in your browser. The ZIP is processed locally and is never uploaded.
+- Browse archived posts, stories, reels, profile media, and saved items, with caption/date search.
+- Read exported message threads, including supported image, video, audio, shared-link, and reaction data.
+- Switch between light and dark appearance; use the same archive on desktop and mobile layouts.
+- Keep imported media as browser-local Blobs in IndexedDB rather than converting large files to base64.
+- Use a read-only interface: InstaVault does not sign in to Instagram or make changes to your account.
 
 ## Run locally
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. Use `npm run lint` and `npm run build` to check the project.
 
 ## Privacy and storage
 
@@ -26,8 +26,8 @@ Import parsing happens in the browser. InstaVault does not ask for Instagram cre
 
 ## Export compatibility
 
-Instagram/Meta export folder names and JSON structures vary by export date, language, and selected data categories. The importer currently supports common post/reel/story JSON structures and message threads under `messages/inbox`. Unsupported structures may be skipped; attachments inside message threads are currently represented as attachment counts rather than rendered media. Saved collections, full Stories/Reels-specific navigation, and complete profile metadata are still being developed.
+Instagram/Meta export folder names and JSON structures vary by export date, language, and selected data categories. InstaVault recognizes common post, reel, story, saved-item, profile, follower/following, and message-thread structures. Media and message attachments are shown when the corresponding files and paths are present in the ZIP. Unsupported or differently shaped structures may be skipped; if something is missing, request a JSON export that includes the relevant data category.
 
-## Build
+## Build and checks
 
-GitHub Actions runs `npm install` and `npm run build` on pushes to the default branch.
+GitHub Actions installs the exact dependency versions from `package-lock.json`, then runs the linter and production build on pushes and pull requests targeting `main`.
