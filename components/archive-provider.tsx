@@ -26,6 +26,16 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       ...next,
       posts: withUrls(next.posts || []),
       savedPosts: withUrls(next.savedPosts || []),
+      conversations: (next.conversations || []).map((conversation) => ({
+        ...conversation,
+        messages: conversation.messages.map((message) => ({
+          ...message,
+          attachments: message.attachments?.map((attachment) => ({
+            ...attachment,
+            mediaUrl: attachment.mediaBlob ? URL.createObjectURL(attachment.mediaBlob) : undefined,
+          })),
+        })),
+      })),
     };
     set(presented);
     void saveArchive(presented);
