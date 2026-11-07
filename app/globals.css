@@ -207,3 +207,5 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .message-attachment audio{display:block;width:100%;max-width:300px;margin-top:6px}
 
 .profile-tabs button{height:100%;display:flex;align-items:center;gap:6px;border:0;border-top:1px solid transparent;background:transparent;color:var(--muted);font-family:inherit;font-size:10px;font-weight:600;letter-spacing:1px;padding:0 4px;cursor:pointer}.profile-tabs button.active{border-top-color:var(--text);color:var(--text)}
+
+.shared-link{display:block;margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;color:#0095f6;text-decoration:none;font-size:12px;overflow-wrap:anywhere}.message-reactions{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.message-reactions span{padding:3px 7px;border:1px solid var(--line);border-radius:999px;font-size:10px;color:var(--muted)}
