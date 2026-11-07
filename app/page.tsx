@@ -78,7 +78,7 @@ export default function Page() {
 
           {tab==="Messages" && <MessagesView conversations={archive.conversations||[]} username={archive.username}/>}
           {tab==="Profile" && <section className="profile-page">
-            <div className="profile-top"><div className="profile-pic">{displayName[0]?.toUpperCase()}</div><div className="profile-info"><h1>{displayName}</h1><div className="profile-stats"><span><b>{posts.length}</b> posts</span><span><b>{archive.followerCount ?? archive.followerFiles}</b> followers</span><span><b>{archive.followingCount ?? archive.followingFiles}</b> following</span></div><p><b>{displayName}</b><br/>Personal Instagram archive</p></div></div>
+            <div className="profile-top"><div className="profile-pic">{displayName[0]?.toUpperCase()}</div><div className="profile-info"><h1>{displayName}</h1><div className="profile-stats"><span><b>{profilePosts.length}</b> posts</span><span><b>{archive.followerCount ?? archive.followerFiles}</b> followers</span><span><b>{archive.followingCount ?? archive.followingFiles}</b> following</span></div><p><b>{displayName}</b><br/>Personal Instagram archive</p></div></div>
             <div className="profile-tabs"><button className={profileMode==="posts"?"active":""} onClick={()=>setProfileMode("posts")}><Grid3X3 size={13}/> POSTS</button><button className={profileMode==="reels"?"active":""} onClick={()=>setProfileMode("reels")}><Video size={13}/> REELS</button></div>
             <div className="posts">{(profileMode==="posts"?profilePosts:profileReels).map((p,i)=><button key={p.id} onClick={()=>setSelected(p)}>{media(p,true)}<i><Heart size={18}/></i></button>)}</div>
           </section>}
