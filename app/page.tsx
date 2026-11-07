@@ -17,10 +17,14 @@ export default function Page() {
   const [query,setQuery] = useState("");
   const [dark,setDark] = useState(false);
   const [selected,setSelected] = useState<Post|null>(null);
+  const [profileMode,setProfileMode] = useState<"posts"|"reels">("posts");
   const posts = archive?.posts || [];
   const savedPosts = archive?.savedPosts || [];
   const filtered = useMemo(() => posts.filter(p => (p.caption+" "+p.date).toLowerCase().includes(query.toLowerCase())),[posts,query]);
-  const gridPosts = tab === "Saved" ? savedPosts : tab === "Reels" ? filtered.filter(p=>p.category==="reel"||p.category==="video") : filtered;
+  const feedPosts = filtered.filter(p => p.category !== "story" && p.category !== "reel");
+  const profilePosts = posts.filter(p => p.category === "post" || p.category === "video");
+  const profileReels = posts.filter(p => p.category === "reel");
+  const gridPosts = tab === "Saved" ? savedPosts : tab === "Reels" ? filtered.filter(p=>p.category==="reel") : filtered.filter(p=>p.category!=="story");
   const stories = posts.filter(p=>p.category==="story").slice(0,12);
   const displayName = archive?.username || "Your archive";
   const media = (post:Post, compact=false) => post.mediaUrl
@@ -62,21 +66,21 @@ export default function Page() {
           {tab==="Home" && <div className="home-layout">
             <section className="feed">
               {stories.length>0&&<div className="stories">{stories.map((story,i)=><button key={story.id} className="story" onClick={()=>setSelected(story)}><span>{story.mediaUrl?<img src={story.mediaUrl} alt=""/>:<span className="story-fallback">{displayName[0]?.toUpperCase()}</span>}</span><small>{i===0?displayName:"Archive "+(i+1)}</small></button>)}</div>}
-              {filtered.length ? filtered.map((post,i)=><article className="feed-post" key={post.id}>
+              {feedPosts.length ? feedPosts.map((post,i)=><article className="feed-post" key={post.id}>
                 <div className="feed-post-head"><div className="avatar">{displayName[0]?.toUpperCase()}</div><div className="feed-account"><b>{displayName}</b><small>{post.date||"From your archive"}</small></div><button aria-label="More options"><MoreHorizontal size={22}/></button></div>
                 <button className="feed-media" onClick={()=>setSelected(post)}>{media(post,true)}</button>
                 <div className="feed-actions"><button aria-label="Like (archived)"><Heart size={24}/></button><button aria-label="Comment (read only)"><MessageCircle size={24}/></button><button aria-label="Share (read only)"><Send size={23}/></button><button className="save-action" aria-label="Saved status"><Bookmark size={24}/></button></div>
                 <div className="feed-caption">{post.caption&&<p><b>{displayName}</b> {post.caption}</p>}<small>{post.date}</small></div>
               </article>) : <div className="empty"><ImageIcon size={30}/><h2>No posts in this archive</h2><p>Posts and media will appear here when they are included in your Instagram export.</p></div>}
             </section>
-            <aside className="feed-side"><div className="suggestion-user"><div className="avatar large">{displayName[0]?.toUpperCase()}</div><div><b>{displayName}</b><small>Personal archive</small></div><span>LOCAL</span></div><p>Archive overview</p><div className="archive-stats"><span><b>{posts.length}</b> posts</span><span><b>{archive.mediaCount}</b> media files</span><span><b>{archive.conversations.length}</b> chats</span></div><small className="local-note"><ShieldCheck size={14}/> Your archive stays on this device.</small></aside>
+            <aside className="feed-side"><div className="suggestion-user"><div className="avatar large">{displayName[0]?.toUpperCase()}</div><div><b>{displayName}</b><small>Personal archive</small></div><span>LOCAL</span></div><p>Archive overview</p><div className="archive-stats"><span><b>{profilePosts.length}</b> posts</span><span><b>{archive.mediaCount}</b> media files</span><span><b>{archive.conversations.length}</b> chats</span></div><small className="local-note"><ShieldCheck size={14}/> Your archive stays on this device.</small></aside>
           </div>}
 
           {tab==="Messages" && <MessagesView conversations={archive.conversations||[]} username={archive.username}/>}
           {tab==="Profile" && <section className="profile-page">
             <div className="profile-top"><div className="profile-pic">{displayName[0]?.toUpperCase()}</div><div className="profile-info"><h1>{displayName}</h1><div className="profile-stats"><span><b>{posts.length}</b> posts</span><span><b>{archive.followerCount ?? archive.followerFiles}</b> followers</span><span><b>{archive.followingCount ?? archive.followingFiles}</b> following</span></div><p><b>{displayName}</b><br/>Personal Instagram archive</p></div></div>
-            <div className="profile-tabs"><span><Grid3X3 size={13}/> POSTS</span><span><Video size={13}/> REELS</span></div>
-            <div className="posts">{posts.map((p,i)=><button key={p.id} onClick={()=>setSelected(p)}>{media(p,true)}<i><Heart size={18}/></i></button>)}</div>
+            <div className="profile-tabs"><button className={profileMode==="posts"?"active":""} onClick={()=>setProfileMode("posts")}><Grid3X3 size={13}/> POSTS</button><button className={profileMode==="reels"?"active":""} onClick={()=>setProfileMode("reels")}><Video size={13}/> REELS</button></div>
+            <div className="posts">{(profileMode==="posts"?profilePosts:profileReels).map((p,i)=><button key={p.id} onClick={()=>setSelected(p)}>{media(p,true)}<i><Heart size={18}/></i></button>)}</div>
           </section>}
 
           {(tab==="Explore"||tab==="Reels"||tab==="Saved") && <section className="browse-page">
