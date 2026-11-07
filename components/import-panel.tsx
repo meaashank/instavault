@@ -197,10 +197,10 @@ export function ImportPanel({ close }: { close: () => void }) {
         .find((item: any) => /user(name)?/i.test(String(item?.label || "")));
       const username = String(directUsername || textValue(profileUsername?.value) || "");
       const followerCount = parsed
-        .filter(({ path }) => /followers(_\\d+)?\\.json$/i.test(path))
+        .filter(({ path }) => /followers(_\d+)?\.json$/i.test(path))
         .reduce((total, item) => total + rowsFrom(item.value).length, 0);
       const followingCount = parsed
-        .filter(({ path }) => /following(_\\d+)?\\.json$/i.test(path))
+        .filter(({ path }) => /following(_\d+)?\.json$/i.test(path))
         .reduce((total, item) => total + rowsFrom(item.value).length, 0);
       const archive: Archive = {
         username,
