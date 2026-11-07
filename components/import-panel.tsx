@@ -177,6 +177,12 @@ export function ImportPanel({ close }: { close: () => void }) {
               timestamp,
               date: timestamp ? new Date(timestamp).toLocaleString() : "",
               attachments: attachments.filter(Boolean),
+              shareUrl: textValue(message?.share?.link) || textValue(message?.share?.url) || undefined,
+              shareTitle: textValue(message?.share?.title) || textValue(message?.share?.share_text) || textValue(message?.share?.original_content_owner) || undefined,
+              reactions: Array.isArray(message?.reactions) ? message.reactions.map((reaction: any) => ({
+                actor: textValue(reaction?.actor),
+                reaction: textValue(reaction?.reaction),
+              })).filter((reaction: any) => reaction.reaction) : [],
             };
           }));
           return {
