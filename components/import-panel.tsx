@@ -188,9 +188,14 @@ export function ImportPanel({ close }: { close: () => void }) {
         });
       const conversations: Conversation[] = (await Promise.all(conversationPromises)).filter((conversation) => conversation.messages.length > 0);
 
-      const username = parsed.map(({ value }) =>
+      const directUsername = parsed.map(({ value }) =>
         value?.profile_user?.username || value?.profile?.username || value?.username
-      ).find(Boolean) || "";
+      ).find(Boolean);
+      const profileUsername = parsed
+        .filter(({ path }) => /instagram_profile_information\.json$/i.test(path))
+        .flatMap(({ value }) => Array.isArray(value) ? value : [])
+        .find((item: any) => /user(name)?/i.test(String(item?.label || "")));
+      const username = String(directUsername || textValue(profileUsername?.value) || "");
       const archive: Archive = {
         username,
         posts,
