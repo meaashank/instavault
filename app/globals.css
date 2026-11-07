@@ -40,3 +40,131 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .import-details{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 20px;margin-top:25px;color:var(--muted);font-size:11px}
 .import-details span{display:flex;align-items:center;gap:6px}.import-details svg{color:#3897f0}
 @media(max-width:640px){.empty-state{min-height:calc(100dvh - 190px);padding:30px 20px 50px}.empty-state h1{font-size:24px}.empty-state>p{font-size:13px}.import-details{flex-direction:column;align-items:center;gap:10px}}
+
+
+/* Instagram-like archive experience */
+:root{--ig-blue:#0095f6}
+.shell{background:var(--bg);color:var(--text)}
+.side{width:245px;padding:28px 12px 18px;background:var(--panel);border-right:1px solid var(--line)}
+.logo{font-family:Georgia,"Times New Roman",serif;font-size:29px;font-weight:600;letter-spacing:-1.2px;padding:8px 12px 35px;cursor:pointer}
+.logo i{display:none}
+.side nav{gap:5px}
+.nav{height:50px;padding:0 12px;gap:16px;font-size:15px;border-radius:8px}
+.nav:hover,.nav.active{background:var(--soft)}
+.side-bottom p{font-size:11px}
+.main{margin-left:245px;width:calc(100% - 245px)}
+.topbar{height:62px!important;padding:0 28px!important;position:sticky;top:0;z-index:4}
+.topbar-title{font-size:15px;font-weight:600;display:none}
+.actions label{width:230px;height:38px;border:0;background:var(--soft);border-radius:9px}
+.actions input{font-size:14px}
+.content{max-width:1050px;padding:28px 32px 30px}
+.empty-state{min-height:calc(100dvh - 125px);max-width:480px;padding:36px 20px}
+.empty-state-icon{width:72px;height:72px;border-radius:50%;border:1.5px solid var(--text);margin-bottom:20px}
+.empty-state h1{font-size:25px;font-weight:600;letter-spacing:-.3px}
+.empty-state>p{font-size:14px;line-height:1.55}
+.empty-state .primary{background:var(--ig-blue);height:34px;font-size:14px;border-radius:8px}
+.import-details{font-size:11px}
+.home-layout{display:grid;grid-template-columns:minmax(0,630px) 290px;gap:54px;justify-content:center;align-items:start}
+.feed{width:100%;max-width:470px;margin:0 auto}
+.stories{display:flex;gap:15px;overflow-x:auto;padding:12px 4px 17px;margin-bottom:10px;border-bottom:1px solid var(--line);scrollbar-width:none}
+.stories::-webkit-scrollbar{display:none}
+.story{flex:0 0 66px;border:0;background:transparent;padding:0;display:grid;justify-items:center;gap:6px;color:var(--text)}
+.story>span{width:58px;height:58px;border-radius:50%;padding:3px;border:2px solid #d62976;display:block}
+.story img,.story-fallback{width:100%;height:100%;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:var(--soft);font-size:20px}
+.story small{font-size:10px;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-post{border-bottom:1px solid var(--line);padding-bottom:17px;margin-bottom:18px}
+.feed-post-head{height:52px;display:flex;align-items:center;gap:10px;padding:0 2px}
+.avatar{width:34px;height:34px;flex:0 0 34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#feda75,#d62976,#962fbf);color:white;font-weight:600;font-size:13px}
+.avatar.large{width:44px;height:44px}
+.feed-account{display:grid;gap:3px;flex:1}
+.feed-account b,.suggestion-user b{font-size:12px}
+.feed-account small{font-size:10px;color:var(--muted)}
+.feed-post-head>button{border:0;background:transparent;color:var(--text)}
+.feed-media{width:100%;display:block;border:1px solid var(--line);background:var(--soft);padding:0;overflow:hidden;max-height:590px;min-height:230px}
+.feed-media img,.feed-media video{display:block;width:100%;max-height:590px;object-fit:contain;background:#111}
+.post-placeholder{min-height:250px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:var(--soft);font-size:12px}
+.feed-actions{height:43px;display:flex;align-items:center;gap:14px}
+.feed-actions button{border:0;background:transparent;color:var(--text);padding:3px 0}
+.feed-actions button:hover{opacity:.6}
+.feed-actions .save-action{margin-left:auto}
+.feed-caption{font-size:12px;line-height:1.5}
+.feed-caption p{margin:0 0 5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.feed-caption small{font-size:10px;color:var(--muted)}
+.feed-side{padding-top:18px;position:sticky;top:85px}
+.suggestion-user{display:flex;align-items:center;gap:11px}
+.suggestion-user>div:nth-child(2){display:grid;gap:4px;flex:1}
+.suggestion-user small{font-size:11px;color:var(--muted)}
+.suggestion-user>span{font-size:9px;color:var(--ig-blue);font-weight:700}
+.feed-side>p{font-size:12px;font-weight:600;color:var(--muted);margin:28px 0 12px}
+.archive-stats{display:grid;gap:10px;font-size:12px}
+.archive-stats span{display:flex;justify-content:space-between;color:var(--muted)}
+.archive-stats b{color:var(--text)}
+.local-note{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px;margin-top:28px}
+.profile-page{max-width:850px;margin:0 auto}
+.profile-top{display:flex;align-items:center;gap:85px;padding:28px 8% 42px;border-bottom:1px solid var(--line)}
+.profile-pic{width:150px;height:150px;flex:0 0 150px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#feda75,#d62976,#962fbf);color:#fff;font-size:52px;font-weight:300}
+.profile-info h1{font-size:20px;font-weight:400;margin:0 0 22px}
+.profile-stats{display:flex;gap:38px;font-size:14px;margin-bottom:18px}
+.profile-stats b{font-weight:600}
+.profile-info p{font-size:13px;line-height:1.5}
+.profile-tabs{height:53px;display:flex;justify-content:center;gap:55px}
+.profile-tabs span{display:flex;align-items:center;gap:6px;border-top:1px solid var(--text);font-size:10px;letter-spacing:1px;font-weight:600}
+.posts{gap:4px}
+.posts>button,.explore-grid>button,.reels-grid>button{border:0;padding:0;position:relative;aspect-ratio:1;background:var(--soft);overflow:hidden}
+.posts img,.posts video,.explore-grid img,.explore-grid video,.reels-grid img,.reels-grid video{width:100%;height:100%;object-fit:cover;display:block}
+.posts .post-placeholder,.explore-grid .post-placeholder,.reels-grid .post-placeholder{height:100%;min-height:0;font-size:10px}
+.posts>button>i,.explore-grid>button>i,.reels-grid>button>i{position:absolute;inset:0;display:grid;place-items:center;color:white;background:#0005;opacity:0;transition:opacity .15s}
+.posts>button:hover>i,.explore-grid>button:hover>i,.reels-grid>button:hover>i{opacity:1}
+.browse-page{max-width:940px;margin:0 auto}
+.browse-title{padding:8px 0 20px}
+.browse-title h1{font-size:22px;font-weight:500;margin:0}
+.browse-title p{font-size:12px;color:var(--muted)}
+.explore-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.reels-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.reels-grid>button{aspect-ratio:9/16}
+.instagram-modal{grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);border-radius:3px}
+.instagram-modal .modal-media{min-width:0;min-height:300px;background:#111;display:grid;place-items:center}
+.instagram-modal .modal-media img,.instagram-modal .modal-media video{display:block;width:100%;max-height:85vh;object-fit:contain}
+.instagram-modal .modal-caption{padding:25px 20px;font-size:13px}
+.instagram-modal .modal-caption p{white-space:pre-wrap;overflow-wrap:anywhere}
+.mobile-logo{display:none}
+.mobile-nav{display:none}
+@media(max-width:1050px){.home-layout{grid-template-columns:minmax(0,600px);gap:0}.feed-side{display:none}}
+@media(max-width:760px){
+ .side{display:none}
+ .main{margin:0;width:100%;padding-bottom:56px}
+ .topbar{height:53px!important;padding:0 15px!important}
+ .topbar-title{display:none}
+ .mobile-logo{display:block;border:0;background:transparent;color:var(--text);font:600 26px Georgia,"Times New Roman",serif;padding:0}
+ .actions{gap:13px}
+ .actions label{width:min(38vw,155px);height:34px}
+ .content{padding:0 0 22px}
+ .empty-state{min-height:calc(100dvh - 110px);padding:35px 24px}
+ .home-layout{display:block}
+ .feed{max-width:470px}
+ .stories{padding-left:12px;padding-right:12px}
+ .feed-post{margin-bottom:0;padding:0 0 13px}
+ .feed-post-head{padding:0 12px}
+ .feed-media{border-left:0;border-right:0;max-height:none}
+ .feed-media img,.feed-media video{max-height: none;max-height: min(115vw,620px)}
+ .feed-actions,.feed-caption{margin-left:12px;margin-right:12px}
+ .profile-page{padding:0 0}
+ .profile-top{gap:25px;padding:28px 18px 25px}
+ .profile-pic{width:86px;height:86px;flex-basis:86px;font-size:32px}
+ .profile-info h1{font-size:18px;margin-bottom:14px}
+ .profile-stats{gap:14px;font-size:12px;flex-wrap:wrap;margin-bottom:12px}
+ .profile-info p{font-size:12px}
+ .profile-tabs{height:48px}
+ .explore-grid{gap:2px}
+ .reels-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+ .browse-title{padding:16px 14px}
+ .posts{gap:2px}
+ .messages-layout{margin:0 8px;height:calc(100dvh - 125px);min-height:430px;border-radius:0}
+ .instagram-modal{display:flex;flex-direction:column;max-height:92dvh;overflow:auto}
+ .instagram-modal .modal-media img,.instagram-modal .modal-media video{max-height:62dvh}
+ .instagram-modal .modal-caption{padding:15px}
+ .mobile-nav{display:flex;position:fixed;z-index:8;inset:auto 0 0;height:55px;padding:0 8px calc(env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);justify-content:space-around;align-items:center}
+ .mobile-nav button{width:44px;height:44px;border:0;background:transparent;color:var(--text);display:grid;place-items:center}
+ .mobile-nav button.active{color:var(--ig-blue)}
+ footer{display:none}
+}
