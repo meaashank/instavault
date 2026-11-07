@@ -23,8 +23,20 @@ function textValue(value: any): string {
   if (value && typeof value === "object") {
     if (typeof value.value === "string") return value.value;
     if (typeof value.title === "string") return value.title;
+    if (typeof value.uri === "string") return value.uri;
+    if (typeof value.href === "string") return value.href;
   }
   return "";
+}
+
+function safeHttpUrl(value: any): string | undefined {
+  const candidate = textValue(value);
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function rowsFrom(value: any): any[] {
@@ -177,7 +189,7 @@ export function ImportPanel({ close }: { close: () => void }) {
               timestamp,
               date: timestamp ? new Date(timestamp).toLocaleString() : "",
               attachments: attachments.filter(Boolean),
-              shareUrl: textValue(message?.share?.link) || textValue(message?.share?.url) || undefined,
+              shareUrl: safeHttpUrl(message?.share?.link) || safeHttpUrl(message?.share?.url),
               shareTitle: textValue(message?.share?.title) || textValue(message?.share?.share_text) || textValue(message?.share?.original_content_owner) || undefined,
               reactions: Array.isArray(message?.reactions) ? message.reactions.map((reaction: any) => ({
                 actor: textValue(reaction?.actor),
