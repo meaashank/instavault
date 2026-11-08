@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
   Compass,
@@ -8,11 +8,13 @@ import {
   Heart,
   Home,
   Image as ImageIcon,
+  Info,
   MessageCircle,
   Moon,
   Search,
   Send,
   ShieldCheck,
+  SquarePlay,
   Sun,
   Upload,
   UserRound,
@@ -32,6 +34,13 @@ const nav = [
   ["Saved", Bookmark],
   ["Profile", UserRound],
 ] as const;
+const mobileNav = [
+  ["Home", Home],
+  ["Reels", SquarePlay],
+  ["Messages", Send],
+  ["Explore", Search],
+  ["Profile", UserRound],
+] as const;
 const EMPTY_POSTS: Post[] = [];
 
 export default function Page() {
@@ -39,9 +48,11 @@ export default function Page() {
   const [tab, setTab] = useState<Tab>("Home");
   const [importing, setImporting] = useState(false);
   const [query, setQuery] = useState("");
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const [selected, setSelected] = useState<Post | null>(null);
   const [profileMode, setProfileMode] = useState<"posts" | "reels">("posts");
+  const [unavailableNotice, setUnavailableNotice] = useState<{ message: string; id: number } | null>(null);
+  const noticeSequence = useRef(0);
 
   useEffect(() => {
     if (!selected) return;
@@ -51,6 +62,12 @@ export default function Page() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selected]);
+
+  useEffect(() => {
+    if (!unavailableNotice) return;
+    const timeout = window.setTimeout(() => setUnavailableNotice(null), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [unavailableNotice]);
 
   const posts = archive?.posts ?? EMPTY_POSTS;
   const savedPosts = archive?.savedPosts ?? EMPTY_POSTS;
@@ -83,6 +100,30 @@ export default function Page() {
     setSelected(null);
     setQuery("");
     setProfileMode("posts");
+  };
+  const showUnavailable = (message: string) => {
+    noticeSequence.current += 1;
+    setUnavailableNotice({ message, id: noticeSequence.current });
+  };
+  const navigateTo = (destination: Tab) => {
+    setTab(destination);
+    if (!archive) {
+      if (destination !== "Home") {
+        const label = destination === "Messages" ? "direct messages" : destination.toLowerCase();
+        showUnavailable(`Import an archive to open ${label}.`);
+      }
+      return;
+    }
+
+    if (destination === "Messages" && !archive.conversations.length) {
+      showUnavailable("No direct messages were included in this archive.");
+    } else if (destination === "Explore" && !archive.posts.some((post) => post.category !== "story")) {
+      showUnavailable("No posts were included to explore yet.");
+    } else if (destination === "Reels" && !archive.posts.some((post) => post.category === "reel")) {
+      showUnavailable("No Reels were included in this archive.");
+    } else if (destination === "Saved" && !archive.savedPosts?.length) {
+      showUnavailable("Saved posts were not included in this archive.");
+    }
   };
 
   const media = (post: Post) =>
@@ -118,7 +159,7 @@ export default function Page() {
             <button
               key={name}
               type="button"
-              onClick={() => setTab(name)}
+              onClick={() => navigateTo(name)}
               className={tab === name ? "nav active" : "nav"}
               aria-current={tab === name ? "page" : undefined}
             >
@@ -241,11 +282,19 @@ export default function Page() {
                           >
                             {media(post)}
                           </button>
-                          <div className="feed-actions" aria-hidden="true">
-                            <Heart size={23} />
-                            <MessageCircle size={22} />
-                            <Send size={21} />
-                            <Bookmark size={22} />
+                          <div className="feed-actions" aria-label="Post actions">
+                            <button type="button" aria-label="Like post" onClick={() => showUnavailable("Likes are unavailable in this read-only archive.")}>
+                              <Heart size={23} aria-hidden="true" />
+                            </button>
+                            <button type="button" aria-label="View comments" onClick={() => showUnavailable("Comments were not included in this archive.")}>
+                              <MessageCircle size={22} aria-hidden="true" />
+                            </button>
+                            <button type="button" aria-label="Share post" onClick={() => showUnavailable("Sharing is unavailable in this read-only archive.")}>
+                              <Send size={21} aria-hidden="true" />
+                            </button>
+                            <button type="button" aria-label="Save post" onClick={() => showUnavailable("Saving posts is unavailable in this read-only archive.")}>
+                              <Bookmark size={22} aria-hidden="true" />
+                            </button>
                           </div>
                           <div className="feed-caption">
                             {post.caption && <p><b>{displayName}</b> {post.caption}</p>}
@@ -391,20 +440,40 @@ export default function Page() {
         </div>
       </section>
 
-      <nav className="mobile-nav" aria-label="Mobile archive navigation">
-        {nav.map(([name, Icon]) => (
+      <nav className="mobile-nav" aria-label="Primary navigation">
+        {mobileNav.map(([name, Icon]) => {
+          const active = (tab === "Saved" ? "Profile" : tab) === name;
+          const label = name === "Messages" ? "Direct messages" : name === "Explore" ? "Search" : name;
+          return (
           <button
             key={name}
             type="button"
-            onClick={() => setTab(name)}
-            aria-label={name}
-            aria-current={tab === name ? "page" : undefined}
-            className={tab === name ? "active" : ""}
+            onClick={() => navigateTo(name)}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
+            className={active ? "active" : ""}
           >
-            <Icon size={21} strokeWidth={tab === name ? 2.3 : 1.8} aria-hidden="true" />
+            {name === "Profile" && archive ? (
+              <span className="mobile-avatar" aria-hidden="true">{initial}</span>
+            ) : (
+              <Icon
+                size={24}
+                strokeWidth={active ? 2.35 : 1.8}
+                fill={active && (name === "Home" || name === "Messages") ? "currentColor" : "none"}
+                aria-hidden="true"
+              />
+            )}
           </button>
-        ))}
+          );
+        })}
       </nav>
+
+      {unavailableNotice && (
+        <div key={unavailableNotice.id} className="unavailable-toast" role="status" aria-live="polite">
+          <Info size={15} aria-hidden="true" />
+          <span>{unavailableNotice.message}</span>
+        </div>
+      )}
 
       {importing && <ImportPanel close={() => setImporting(false)} />}
       {selected && (
